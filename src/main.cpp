@@ -55,10 +55,10 @@ int main() {
   int lane = 1;
   
   // Have a reference velocity to target
-  double ref_vel = 49.5; //mph  
+  double ref_vel = 0.0; //mph  
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-               &map_waypoints_dx,&map_waypoints_dy,&lane,&ref_vel]
+  h.onMessage([&ref_vel,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
+               &map_waypoints_dx,&map_waypoints_dy,&lane]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -102,7 +102,7 @@ int main() {
           
           int prev_size = previous_path_x.size();
           
-          /*
+          
           if(prev_size > 0)
           {
             car_s = end_path_s;
@@ -124,16 +124,29 @@ int main() {
               
               check_car_s += ((double)prev_size*.02*check_speed); // if using previous points can project s value out
               // check s values greater than mine and s gap
-              if((check_car > car_s) && ((check_car_s-car_s) < 30))
+              if((check_car_s > car_s) && ((check_car_s-car_s) < 30))
               {
                 // Do some logic here, lower reference velocity so we don't crash into the car infront of us
                 // also flag to try to change lanes
-                ref_vel = 29.5; //mph
-                //too_close = true;
+                //ref_vel = 29.5; //mph
+                too_close = true;
+                if(lane > 0)
+                {
+                  lane = 0;
+                }
               }
             }
           }
-          */
+
+          if(too_close)
+          {
+            ref_vel -= .224;
+          }
+          else if(ref_vel < 49.5)
+          {
+            ref_vel += .224;
+          }
+         
           
           // create a list of widely spaced (x,y) waypoints, evenly spaced at 30m
           // later we will interpolate these waypoints with a spline and fill it with more points that control speed
@@ -204,6 +217,14 @@ int main() {
           
           // create a spline
           tk::spline s;
+
+         /*  std::cout << "********************************" << std::endl;
+
+          for(int i = 0; i < ptsx.size(); i++)
+          {
+            std::cout << "ptsx: " << ptsx[i] << std::endl;
+            std::cout << "ptsy: " << ptsy[i] << std::endl;
+          }    */       
           
           // set (x,y) points to the spline
           s.set_points(ptsx,ptsy);
@@ -228,9 +249,9 @@ int main() {
           double x_add_on = 0;
           
           // fill up the rest of our path planner after filling it with previous points, here we will always output 50 points
-          for(int i = 0; i <= 50-previous_path_x.size(); i++)
+          for(int i = 1; i <= 50-previous_path_x.size(); i++)
           {
-            double N = (target_dist/(0.2*ref_vel/2.24));
+            double N = (target_dist/(0.02*ref_vel/2.24));
             double x_point = x_add_on+(target_x)/N;
             double y_point = s(x_point);
             
