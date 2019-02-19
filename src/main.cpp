@@ -8,6 +8,7 @@
 #include "helpers.h"
 #include "json.hpp"
 #include "spline.h"
+#include "vehicle.h"
 
 // for convenience
 using nlohmann::json;
@@ -36,9 +37,9 @@ int main() {
     std::istringstream iss(line);
     double x;
     double y;
-    float s;
-    float d_x;
-    float d_y;
+    double s;
+    double d_x;
+    double d_y;
     iss >> x;
     iss >> y;
     iss >> s;
@@ -84,6 +85,8 @@ int main() {
           double car_yaw = j[1]["yaw"];
           double car_speed = j[1]["speed"];
 
+          //std::cout << "car_speed " << car_speed << std::endl;
+
           // Previous path data given to the Planner
           auto previous_path_x = j[1]["previous_path_x"];
           auto previous_path_y = j[1]["previous_path_y"];
@@ -107,46 +110,88 @@ int main() {
           {
             car_s = end_path_s;
           }
+
+          // create ego car
+          Vehicle car = Vehicle(lane,car_s,ref_vel/2.24);
+          car.state = "KL";
+          car.target_speed = 49.5; // mph
+          car.lanes_available = 3;
+          car.goal_lane = 1;
+          car.goal_s = 999999999.0;
+          car.max_acceleration = .224;
           
-          bool too_close = false;
-          
-          // find ref_v to use
-          for(int i = 0; i < sensor_fusion.size(); i++)
-          {
-            // car is in my lane
-            float d = sensor_fusion[i][6];
-            if(d < (2+4*lane+2) && d > (2+4*lane-2))
+          // create other vehicles
+          std::map<int, Vehicle> vehicles;
+
+          int j = 0;
+
+          for(int i=0; i < sensor_fusion.size(); i++) {            
+            
+            double d = sensor_fusion[i][6];
+
+            int check_car_lane;
+            
+            if(d > 0 && d < 4) {
+              check_car_lane = 0;
+            } else if(d > 4 && d < 8) {
+              check_car_lane = 1;
+            } else if(d > 8 and d < 12) {
+              check_car_lane = 2;
+            } 	
+            
+            double vx = sensor_fusion[i][3];
+            double vy = sensor_fusion[i][4];
+            double check_speed = sqrt(vx*vx+vy*vy);
+            double check_car_s = sensor_fusion[i][5];
+
+            Vehicle vehicle = Vehicle(check_car_lane,check_car_s,check_speed);
+            vehicle.state = "KL";
+            vehicles.insert(std::pair<int,Vehicle>(i,vehicle));
+
+            /* if(fabs(check_car_s - car_s) < 70)
             {
-              double vx = sensor_fusion[i][3];
-              double vy = sensor_fusion[i][4];
-              double check_speed = sqrt(vx*vx+vy*vy);
-              double check_car_s = sensor_fusion[i][5];
-              
-              check_car_s += ((double)prev_size*.02*check_speed); // if using previous points can project s value out
-              // check s values greater than mine and s gap
-              if((check_car_s > car_s) && ((check_car_s-car_s) < 30))
-              {
-                // Do some logic here, lower reference velocity so we don't crash into the car infront of us
-                // also flag to try to change lanes
-                //ref_vel = 29.5; //mph
-                too_close = true;
-                if(lane > 0)
-                {
-                  lane = 0;
-                }
-              }
-            }
+              Vehicle vehicle = Vehicle(check_car_lane,check_car_s,check_speed);
+              vehicle.state = "CS";
+              vehicles.insert(std::pair<int,Vehicle>(++j,vehicle));
+            } */
+            
           }
 
-          if(too_close)
-          {
-            ref_vel -= .224;
+          // generate predictions
+          map<int ,vector<Vehicle> > predictions;
+
+          map<int, Vehicle>::iterator it = vehicles.begin();
+
+          while (it != vehicles.end()) {
+            int v_id = it->first;
+            vector<Vehicle> preds = it->second.generate_predictions((double)prev_size*0.02);
+            predictions[v_id] = preds;
+            ++it;
           }
-          else if(ref_vel < 49.5)
+
+          //Debug
+          /* std::cout << "pred size " << predictions.size() << std::endl;
+          for(int i=0; i < predictions.size(); i++)
           {
-            ref_vel += .224;
-          }
-         
+            for (auto j: predictions[i])
+            {
+              std::cout << "pred lane " << j.lane << std::endl;
+              std::cout << "pred s " << j.s << std::endl;
+              std::cout << "pred v " << j.v << std::endl;
+            }
+          }  */         
+
+
+          // behavior planning
+          vector<Vehicle> trajectory = car.choose_next_state(predictions);
+          car.realize_next_state(trajectory);
+
+          lane = car.lane;
+          ref_vel = car.v * 2.24;
+
+          std::cout << "lane: " << lane << std::endl;
+          std::cout << "ref_vel: " << ref_vel << std::endl;
+          std::cout << "car_s: " << car.s << std::endl;      
           
           // create a list of widely spaced (x,y) waypoints, evenly spaced at 30m
           // later we will interpolate these waypoints with a spline and fill it with more points that control speed
@@ -219,7 +264,6 @@ int main() {
           tk::spline s;
 
          /*  std::cout << "********************************" << std::endl;
-
           for(int i = 0; i < ptsx.size(); i++)
           {
             std::cout << "ptsx: " << ptsx[i] << std::endl;
