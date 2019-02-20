@@ -82,8 +82,8 @@ vector<Vehicle> Vehicle::choose_next_state(map<int, vector<Vehicle>> &prediction
   std::cout << "Best Cost: " << best_cost << std::endl;
   std::cout << "Best Trajectory: " << best_state << std::endl;
   std::cout << "********************************" << std::endl;
-              
 
+  // Alternate min cost code
   /* vector<double>::iterator best_cost = min_element(begin(costs), end(costs));
   std::cout << "Best Cost: " << *best_cost << std::endl;
   int best_idx = distance(begin(costs), best_cost);
@@ -280,6 +280,7 @@ bool Vehicle::get_vehicle_behind(map<int, vector<Vehicle>> &predictions,
       found_vehicle = true;
     }
   }
+  // Debug
   //std::cout << "found vehicle behind " << found_vehicle << std::endl;
   /* if(found_vehicle)
   {
@@ -306,6 +307,7 @@ bool Vehicle::get_vehicle_ahead(map<int, vector<Vehicle>> &predictions,
       found_vehicle = true;
     }
   }
+  // Debug
   //std::cout << "found vehicle ahead " << found_vehicle << std::endl;
   /* if(found_vehicle)
   {

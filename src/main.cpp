@@ -10,7 +10,7 @@
 #include "spline.h"
 #include "vehicle.h"
 
-// for convenience
+// For convenience
 using nlohmann::json;
 using std::string;
 using std::vector;
@@ -32,6 +32,7 @@ int main() {
 
   std::ifstream in_map_(map_file_.c_str(), std::ifstream::in);
 
+  // Read waypoints
   string line;
   while (getline(in_map_, line)) {
     std::istringstream iss(line);
@@ -52,7 +53,7 @@ int main() {
     map_waypoints_dy.push_back(d_y);
   }
   
-  // start in lane 1
+  // Start in lane 1
   int lane = 1;
   
   // Have a reference velocity to target
@@ -106,15 +107,16 @@ int main() {
            *   sequentially every .02 seconds
            */
           
-          int prev_size = previous_path_x.size();
-          
+          // Check for previous path and Set car s to end of previous path
+          int prev_size = previous_path_x.size();          
           
           if(prev_size > 0)
           {
             car_s = end_path_s;
           }
-
-          // create ego car
+          
+          //// LOCALIZATION ////
+          // Create ego car
           Vehicle car = Vehicle(lane,car_s,ref_vel/2.24);
           car.state = state;
           car.target_speed = 49.5; // mph
@@ -122,8 +124,9 @@ int main() {
           car.goal_lane = 1;
           car.goal_s = 999999999.0;
           car.max_acceleration = .224;
-          
-          // create other vehicles
+
+          //// SENSOR FUSION ////          
+          // Create other vehicles from sensor fusion data
           std::map<int, Vehicle> vehicles;
 
           int j = 0;
@@ -149,18 +152,11 @@ int main() {
 
             Vehicle vehicle = Vehicle(check_car_lane,check_car_s,check_speed);
             vehicle.state = "KL";
-            vehicles.insert(std::pair<int,Vehicle>(i,vehicle));
-
-            /* if(fabs(check_car_s - car_s) < 70)
-            {
-              Vehicle vehicle = Vehicle(check_car_lane,check_car_s,check_speed);
-              vehicle.state = "CS";
-              vehicles.insert(std::pair<int,Vehicle>(++j,vehicle));
-            } */
-            
+            vehicles.insert(std::pair<int,Vehicle>(i,vehicle));            
           }
 
-          // generate predictions
+          //// PREDICTION ////
+          // Generate predictions
           map<int ,vector<Vehicle> > predictions;
 
           map<int, Vehicle>::iterator it = vehicles.begin();
@@ -172,49 +168,33 @@ int main() {
             ++it;
           }
 
-          //Debug
-          /* std::cout << "Before" << std::endl;
-          std::cout << "pred size " << predictions.size() << std::endl;
-          for(int i=0; i < predictions.size(); i++)
-          {
-            for (auto j: predictions[i])
-            {
-              std::cout << "pred lane " << j.lane << std::endl;
-              std::cout << "pred s " << j.s << std::endl;
-              std::cout << "pred v " << j.v << std::endl;
-            }
-          } */
-
-          // behavior planning
+          //// BEHAVIOR PLANNING ////
           vector<Vehicle> trajectory = car.choose_next_state(predictions);
           car.realize_next_state(trajectory);          
 
           lane = car.lane;
           ref_vel = car.v * 2.24;
           state = car.state;
-
-          // Debug
-          /* std::cout << "lane: " << lane << std::endl;
-          std::cout << "ref_vel: " << ref_vel << std::endl;
-          std::cout << "car_s: " << car.s << std::endl;     
-          std::cout << "###################################################" << std::endl;  */
           
-          // create a list of widely spaced (x,y) waypoints, evenly spaced at 30m
-          // later we will interpolate these waypoints with a spline and fill it with more points that control speed
+
+          //// TRAJECTORY GENERATION ////
+          
+          // Create a list of widely spaced (x,y) waypoints, evenly spaced at 30m
+          // Later we will interpolate these waypoints with a spline and fill it with more points that control speed
           
           vector<double> ptsx;
           vector<double> ptsy;
           
-          // reference x, y, yaw states
-          // either we will reference the starting point as where the car is or at the previous path end point
+          // Reference x, y, yaw states
+          // Either we will reference the starting point as where the car is or at the previous path end point
           double ref_x = car_x;
           double ref_y = car_y;
           double ref_yaw = deg2rad(car_yaw);
           
-          // if previous size is almost empty, use the car as starting reference
+          // If previous size is almost empty, use the car as starting reference
           if(prev_size < 2)
           {
-            // use two points that make the path tangent to the car
+            // Use two points that make the path tangent to the car
             double prev_car_x = car_x - cos(car_yaw);
             double prev_car_y = car_y - sin(car_yaw);
             
@@ -224,10 +204,10 @@ int main() {
             ptsy.push_back(prev_car_y);
             ptsy.push_back(car_y);
           }          
-          // use the previous path's end point as starting reference
+          // Use the previous path's end point as starting reference
           else
           {
-            // redefine reference state as previous path end point
+            // Redefine reference state as previous path end point
             ref_x = previous_path_x[prev_size-1];
             ref_y = previous_path_y[prev_size-1];
             
@@ -235,7 +215,7 @@ int main() {
             double ref_y_prev = previous_path_y[prev_size-2];
             ref_yaw = atan2(ref_y-ref_y_prev, ref_x-ref_x_prev);
             
-            // use two points that make the path tangent to the previous path's end point
+            // Use two points that make the path tangent to the previous path's end point
             ptsx.push_back(ref_x_prev);
             ptsx.push_back(ref_x);
             
@@ -258,7 +238,7 @@ int main() {
           
           for(int i = 0; i < ptsx.size(); i++)
           {
-            // shift car reference angle to 0 degrees
+            // Shift car reference angle to 0 degrees
             double shift_x = ptsx[i]-ref_x;
             double shift_y = ptsy[i]-ref_y;
             
@@ -266,39 +246,32 @@ int main() {
             ptsy[i] = (shift_x*sin(0-ref_yaw)+shift_y*cos(0-ref_yaw));
           }
           
-          // create a spline
+          // Create a spline
           tk::spline s;
-
-         /*  std::cout << "********************************" << std::endl;
-          for(int i = 0; i < ptsx.size(); i++)
-          {
-            std::cout << "ptsx: " << ptsx[i] << std::endl;
-            std::cout << "ptsy: " << ptsy[i] << std::endl;
-          }    */       
           
-          // set (x,y) points to the spline
+          // Set (x,y) points to the spline
           s.set_points(ptsx,ptsy);
           
-          // define the actual (x,y) points we will use for the planner
+          // Define the actual (x,y) points we will use for the planner
 
           vector<double> next_x_vals;
           vector<double> next_y_vals;
           
-          // start with all of the previous path points from the last time
+          // Start with all of the previous path points from the last time
           for(int i = 0; i < previous_path_x.size(); i++)
           {
             next_x_vals.push_back(previous_path_x[i]);
             next_y_vals.push_back(previous_path_y[i]);
           }
           
-          // calculate how to break up spline points so that we travel at our desired reference velocity
+          // Calculate how to break up spline points so that we travel at our desired reference velocity
           double target_x = 30.0;
           double target_y = s(target_x);
           double target_dist = sqrt((target_x)*(target_x)+(target_y)*(target_y));
           
           double x_add_on = 0;
           
-          // fill up the rest of our path planner after filling it with previous points, here we will always output 50 points
+          // Fill up the rest of our path planner after filling it with previous points, here we will always output 50 points
           for(int i = 1; i <= 50-previous_path_x.size(); i++)
           {
             double N = (target_dist/(0.02*ref_vel/2.24));
@@ -310,7 +283,7 @@ int main() {
             double x_ref = x_point;
             double y_ref = y_point;
             
-            // rotate back to normal 
+            // Rotate back to normal 
             x_point = (x_ref*cos(ref_yaw)-y_ref*sin(ref_yaw));
             y_point = (x_ref*sin(ref_yaw)+y_ref*cos(ref_yaw));
             
