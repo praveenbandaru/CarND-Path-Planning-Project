@@ -103,15 +103,19 @@ vector<string> Vehicle::successor_states() {
   states.push_back("KL");
   string state = this->state;
   if(state.compare("KL") == 0) {
-    states.push_back("PLCL");
-    states.push_back("PLCR");
+    if (this->lane != 0) {
+      states.push_back("PLCL");
+    }
+    if (this->lane != lanes_available - 1) {
+      states.push_back("PLCR");
+    }
   } else if (state.compare("PLCL") == 0) {
-    if (lane != 0) {
+    if (this->lane != 0) {
       states.push_back("PLCL");
       states.push_back("LCL");
     }
   } else if (state.compare("PLCR") == 0) {
-    if (lane != lanes_available - 1) {
+    if (this->lane != lanes_available - 1) {
       states.push_back("PLCR");
       states.push_back("LCR");
     }
@@ -268,7 +272,7 @@ bool Vehicle::get_vehicle_behind(map<int, vector<Vehicle>> &predictions,
   for (map<int, vector<Vehicle>>::iterator it = predictions.begin(); 
        it != predictions.end(); ++it) {
     temp_vehicle = it->second[0];
-    if (temp_vehicle.lane == this->lane && temp_vehicle.s < this->s 
+    if (temp_vehicle.lane == lane && temp_vehicle.s < this->s 
         && (this->s - temp_vehicle.s) < max_s) {
       max_s = this->s -temp_vehicle.s;
       rVehicle = temp_vehicle;
@@ -294,7 +298,7 @@ bool Vehicle::get_vehicle_ahead(map<int, vector<Vehicle>> &predictions,
   for (map<int, vector<Vehicle>>::iterator it = predictions.begin(); 
        it != predictions.end(); ++it) {
     temp_vehicle = it->second[0];
-    if (temp_vehicle.lane == this->lane && temp_vehicle.s > this->s 
+    if (temp_vehicle.lane == lane && temp_vehicle.s > this->s 
         && (temp_vehicle.s - this->s) < min_s) {
       min_s = temp_vehicle.s - this->s;
       rVehicle = temp_vehicle;

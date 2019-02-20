@@ -56,10 +56,13 @@ int main() {
   int lane = 1;
   
   // Have a reference velocity to target
-  double ref_vel = 0.0; //mph  
+  double ref_vel = 0.0; //mph 
 
-  h.onMessage([&ref_vel,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-               &map_waypoints_dx,&map_waypoints_dy,&lane]
+  // Set Car state
+  string state = "KL";
+
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
+               &map_waypoints_dx,&map_waypoints_dy,&lane,&ref_vel,&state]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -113,7 +116,7 @@ int main() {
 
           // create ego car
           Vehicle car = Vehicle(lane,car_s,ref_vel/2.24);
-          car.state = "KL";
+          car.state = state;
           car.target_speed = 49.5; // mph
           car.lanes_available = 3;
           car.goal_lane = 1;
@@ -170,7 +173,8 @@ int main() {
           }
 
           //Debug
-          /* std::cout << "pred size " << predictions.size() << std::endl;
+          /* std::cout << "Before" << std::endl;
+          std::cout << "pred size " << predictions.size() << std::endl;
           for(int i=0; i < predictions.size(); i++)
           {
             for (auto j: predictions[i])
@@ -179,19 +183,20 @@ int main() {
               std::cout << "pred s " << j.s << std::endl;
               std::cout << "pred v " << j.v << std::endl;
             }
-          }  */         
-
+          } */
 
           // behavior planning
           vector<Vehicle> trajectory = car.choose_next_state(predictions);
-          car.realize_next_state(trajectory);
+          car.realize_next_state(trajectory);          
 
           lane = car.lane;
           ref_vel = car.v * 2.24;
+          state = car.state;
 
           std::cout << "lane: " << lane << std::endl;
           std::cout << "ref_vel: " << ref_vel << std::endl;
-          std::cout << "car_s: " << car.s << std::endl;      
+          std::cout << "car_s: " << car.s << std::endl;     
+          std::cout << "###################################################" << std::endl; 
           
           // create a list of widely spaced (x,y) waypoints, evenly spaced at 30m
           // later we will interpolate these waypoints with a spline and fill it with more points that control speed
