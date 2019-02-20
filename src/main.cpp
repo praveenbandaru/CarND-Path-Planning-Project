@@ -193,10 +193,11 @@ int main() {
           ref_vel = car.v * 2.24;
           state = car.state;
 
-          std::cout << "lane: " << lane << std::endl;
+          // Debug
+          /* std::cout << "lane: " << lane << std::endl;
           std::cout << "ref_vel: " << ref_vel << std::endl;
           std::cout << "car_s: " << car.s << std::endl;     
-          std::cout << "###################################################" << std::endl; 
+          std::cout << "###################################################" << std::endl;  */
           
           // create a list of widely spaced (x,y) waypoints, evenly spaced at 30m
           // later we will interpolate these waypoints with a spline and fill it with more points that control speed

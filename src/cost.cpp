@@ -14,10 +14,10 @@ using std::vector;
  * TODO: change weights for cost functions.
  */
 double REACH_GOAL = 0*pow(10, 1);
-double INEFFICIENCY = pow(10, 4);
-double COLLISION = pow(10, 2);
+double INEFFICIENCY = pow(10, 2);
+double COLLISION = pow(10, 1);
 double BUFFER = pow(10, 3);
-double COMFORT = 0*pow(10,2);
+double COMFORT = pow(10,0);
 
 // Here we have provided two possible suggestions for cost functions, but feel 
 //   free to use your own! The weighted cost over all cost functions is computed

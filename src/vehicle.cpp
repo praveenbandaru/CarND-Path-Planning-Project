@@ -55,12 +55,12 @@ vector<Vehicle> Vehicle::choose_next_state(map<int, vector<Vehicle>> &prediction
   for (vector<string>::iterator it = states.begin(); it != states.end(); ++it) {
     vector<Vehicle> trajectory = generate_trajectory(*it, predictions);
     //Debug
-    int i = 0;
+    /* int i = 0;
     for (auto j: trajectory)
     {      
       std::cout << "traj lane "<< i << ": " << j.lane << std::endl;
       std::cout << "traj v "<< i++ << ": " << j.v << std::endl;
-    }   
+    } */   
 
     if (trajectory.size() != 0) {
       cost = calculate_cost(*this, predictions, trajectory);
@@ -81,6 +81,7 @@ vector<Vehicle> Vehicle::choose_next_state(map<int, vector<Vehicle>> &prediction
 
   std::cout << "Best Cost: " << best_cost << std::endl;
   std::cout << "Best Trajectory: " << best_state << std::endl;
+  std::cout << "********************************" << std::endl;
               
 
   /* vector<double>::iterator best_cost = min_element(begin(costs), end(costs));
