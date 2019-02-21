@@ -20,6 +20,8 @@ Self-Driving Car Engineer Nanodegree Program
 [image13]: ./screenshots/PP3.png "Path Planner In Action"
 [image14]: ./screenshots/PP4.png "Path Planner In Action"
 [image15]: ./screenshots/PP5.png "Path Planner In Action"
+[image16]: ./screenshots/JMT.png "Jerk Minimizing Trajectory"
+[image17]: ./screenshots/CF.png "Cost Functions"
 
 ## Introduction
 In this project, our goal is to design a path planner that is able to create smooth, safe paths for the car to follow along a 3 lane highway with traffic. A successful path planner will be able to keep inside its lane, avoid hitting other cars, and pass slower moving traffic all by using localization, sensor fusion, and map data.
@@ -112,15 +114,54 @@ The first decision-making method that can be used is a  [finite state machine](h
 
 One way to implement a transition function is by generating rough trajectories for each accessible "next state" and then finding the best. To "find the best" we generally use **cost functions**. For each possible scenario, we calculate independent costs (distance to obstacles, legality, …), and add them up. We can then figure out how costly each rough trajectory is and then select the state with the lowest cost trajectory.
 
-In this project the Finite State Machine and a cost based state transition function is used to implement the decision making (at [./src/vehicle.cpp](https://github.com/praveenbandaru/CarND-Path-Planning-Project/blob/master/src/vehicle.cpp#L25) from line 25 to line 97).
+Some of the cost functions which can be used are as below:
+-   feasibility cost: with respect to collision avoidance and vehicle capabilities
+-   safety cost: to keep some buffer distance, good visibility
+-   legality cost: complying to speed limits
+-   comfort cost: minimizing jerk
+-   efficiency cost: with respect to speed and time to goal
+![alt text][image17]
+
+In this project, the Finite State Machine and a cost based state transition function is used to implement the decision making (at [./src/vehicle.cpp](https://github.com/praveenbandaru/CarND-Path-Planning-Project/blob/master/src/vehicle.cpp#L25) from line 25 to line 97).
+
+ The cost functions used in this project are (at [./src/cost.cpp](https://github.com/praveenbandaru/CarND-Path-Planning-Project/blob/master/src/cost.cpp#L186) from line 186 to line 207).
+
 
 ### Trajectory Generation
+The final step in the path planner component is trajectory generation. In this step, we use **Frenet Coordinates**, which are a way of representing position on a road in a more intuitive way than traditional  (x,y)  **Cartesian Coordinates**. With Frenet coordinates, we use the variables  **s**  and  **d**  to describe a vehicle's position on the road. The  s-coordinate represents distance  _along_  the road (also known as  **longitudinal displacement**) and the  d-coordinate represents side-to-side position on the road (also known as  **lateral displacement**).
 ![alt text][image3]
+
+The trajectories can be generated in 2 different ways:-   
+1. in (s, d) coordinates by using the **Jerk Minimizing Trajectory** approach described in the paper from [Moritz Werling](https://pdfs.semanticscholar.org/0e4c/282471fda509e8ec3edd555e32759fedf4d7.pdf).
+2. in (x, y) coordinates by using [spline tool](http://kluge.in-chemnitz.de/opensource/spline/) functions.
+
+The first method consists of trying to find a trajectory that has minimum jerk i.e. maximum comfort for the user.
+The jerk corresponds to variations in acceleration. So we are looking at the 3rd derivatives and we want to minimize the sum of these 3rd derivatives from t_start to t_end. A **Jerk Minimizing Trajectory** has to be a quintic polynomial.
+
+So we end up computing:
+-   a quintic polynomial for the longitudinal part: s(t) is a polynomial of order 5
+-   a quintic polynomial for the lateral part: d(t) is a polynomial of order 5
+
+![alt text][image16]
+
+Once the s(t) and d(t) have been found for the trajectory, we convert back to (x, y) coordinates using the accurate getXYspline function: we want to check speeed and acceleration in cartesian coordinates. 
+
+The second method is proposed in the walk through video of the project where s and d coordinates are used only to define the final target by adding evenly 30m spaced points ahead of the starting reference with a d corresponding to the target lane. But then, these target points are converted back into (x, y) coordinates and a trajectory going from the start point up to the end point (in cartesian coordinates) is computed by using splines. Using splines ensure that continuity is preserved for the generated trajectory and its 1st and 2nd derivatives: so we guarantee continuity in terms of trajectory, speed and acceleration including end points and previous trajectory. The advantage of this method is that it works pretty well even if the (s, d) estimates are not that accurate as it mainly works in (x, y) coordinates and most of the maths is handled via the single header C++ spline library which is very simple to use. In terms of drawbacks, it does not guarantee Minimum Jerk which is related to maximum comfort for the user.
+
+Here in this project , we decided to go ahead with spline method as it is relatively easy to use and the continuity is ensured between the start and end points. The reason not to use JMT algorithm in this particular project is because it involves a 3rd order derivative (acceleration) for the quintic polynomial which will create much higher uncertainty since the map given has a 30 meter resolution in x,y coordinate, and even worse if convert back into s coordinate.
+
+In our implementation using splines, the new path starts with a certain number of points from the previous path, which is received from the simulator at each iteration. From there a spline is generated beginning with the last two points of the previous path that have been kept (or the current position, heading, and velocity if no current path exists), and ending with three points 30, 60 and 90 meters ahead and in the target lane. This produces a smooth x and y trajectory. To prevent excessive acceleration and jerk, the velocity is only allowed to change by a small amount, and the corresponding next x and y points are calculated along the x and y splines created earlier. We also shift and rotate the points into car's perspective before using spline to extrapolate the points and back to normal once done.
 ![alt text][image5]
 
-### Conclusion
+In this project, the code for trajectory generation using spline method is (at [./src/vehicle.cpp](https://github.com/praveenbandaru/CarND-Path-Planning-Project/blob/master/src/main.cpp#L180) from line 180 to line 295).
 
+### Conclusion
+Our path planner works well and was able to make the car drive successfully around the track, **at least 4.32 miles without incident** and crossed 10+ miles incident-free many times. The car was able to drive **according to the speed limit** and our path planner ensured that **Max Acceleration and Jerk are not exceeded**. The car was **able to change lanes** and naviate its way around traffic. The **car did not have collisions** for most of the time and **stayed in lane, except for the time between changing lanes**.  There were some occasional collisions due to the simpler model approach we took in our Prediction Module. In future, we can improve the path planner by updating the Prediction module using Hybrid Approaches and also implement JMT to make the car robust and give a better driving experience.
 ![alt text][image15]
+
+A short video showing the output of path planning code is [here](https://www.youtube.com/watch?v=9a0qZ82hGlk).
+
+[![MPC Controller](https://img.youtube.com/vi/9a0qZ82hGlk/0.jpg)](https://www.youtube.com/watch?v=9a0qZ82hGlk)
 
 ## Basic Build Instructions
 
