@@ -64,9 +64,9 @@ Here in this  **Path Planning**, we are now in charge of  **making decisions**. 
 A prediction module uses a map (localization) and data from sensor fusion to generate predictions for what all other **dynamic** objects in view are likely to do.
 
 There are broadly three categories of approaches to prediction:
- 1. Data-Driven Approaches
- 2. Model Based Approaches
- 3. Hybrid Approaches
+ 1. **Data-Driven Approaches**
+ 2. **Model Based Approaches**
+ 3. **Hybrid Approaches**
  
 	![alt text][image4]
 
@@ -94,9 +94,20 @@ There are broadly three categories of approaches to prediction:
 **Hybrid Approaches** can also be used to generate predictions. It is similar to the Model Based Approach but the multiple-model algorithm is replaced by machine learning here. For example, a Gaussian Naive Bayes classifier can be used to predict the behavior of vehicles on a highway.
 	![alt text][image10]
 
-### Behavior Planning
+In this project, we used a simple model based approach to generate the predictions based on the sensor fusion data (at [./src/vehicle.cpp](https://github.com/praveenbandaru/CarND-Path-Planning-Project/blob/master/src/vehicle.cpp#L320) from line 320 to line 329).
 
+### Behavior Planning
+Once we have the prediction data, we can make a decision to slow down, speed up or change lanes based on the traffic.
+
+The first thing we have to do is  **environment classification**. The choices are not the same whether we are driving on a highway or in a parking lot. Several criteria are taken into account when generating a trajectory, in particular  **safety**,  **feasibility**,  **efficiency**  and  **legality**. Other variables can also be taken into account such as passenger’s comfort.
+
+#### Finite-State Machine
+The first decision-making method that can be used is a  [finite state machine](https://en.wikipedia.org/wiki/Finite-state_machine).  The principle is to define, according to the situations, the possible states of a car. On a highway, the state of a car may be to stay in a lane, change lanes to the left, or change lanes to the right. The next best state of the car is achieved through a **state transition function**. 
 ![alt text][image1]
+
+One way to implement a transition function is by generating rough trajectories for each accessible "next state" and then finding the best. To "find the best" we generally use **cost functions**. For each possible scenario, we calculate independent costs (distance to obstacles, legality, …), and add them up. We can then figure out how costly each rough trajectory is and then select the state with the lowest cost trajectory.
+
+In this project the Finite State Machine and a cost based state transition function is used to implement the decision making (at [./src/vehicle.cpp](https://github.com/praveenbandaru/CarND-Path-Planning-Project/blob/master/src/vehicle.cpp#L25) from line 25 to line 97).
 
 ### Trajectory Generation
 ![alt text][image3]
