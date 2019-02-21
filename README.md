@@ -71,24 +71,24 @@ There are broadly three categories of approaches to prediction:
 	![alt text][image4]
 
 **Data-driven approaches** solve the prediction problem in two phases:
-1.  **Offline training** -  In this phase the goal is to feed some machine learning algorithm a lot of data to train it. For the trajectory clustering example this involved:
-	1.  **Define similarity**  - we first need a definition of similarity that agrees with human common-sense definition.
-	2.  **Unsupervised clustering**  - at this step some machine learning algorithm clusters the trajectories we've observed.
-	3.  **Define Prototype Trajectories**  - for each cluster identify some small number of typical "prototype" trajectories.
-2.  **Online Prediction** - Once the algorithm is trained we bring it onto the road. When we encounter a situation for which the trained algorithm is appropriate (returning to an intersection for example) we can use that algorithm to actually predict the trajectory of the vehicle.
-	1.  **Observe Partial Trajectory**  - As the target vehicle drives we can think of it leaving a "partial trajectory" behind it.
-	2.  **Compare to Prototype Trajectories**  - We can compare this partial trajectory to the  _corresponding parts_  of the prototype trajectories. When these partial trajectories are more similar (using the same notion of similarity defined earlier) their likelihoods should increase relative to the other trajectories.
-	3.  **Generate Predictions**  - For each cluster we identify the most likely prototype trajectory. We broadcast each of these trajectories along with the associated probability (see the image below).
+ 1.  **Offline training** -  In this phase the goal is to feed some machine learning algorithm a lot of data to train it. For the trajectory clustering example this involved:
+		1.  **Define similarity**  - we first need a definition of similarity that agrees with human common-sense definition.
+		2.  **Unsupervised clustering**  - at this step some machine learning algorithm clusters the trajectories we've observed.
+		3.  **Define Prototype Trajectories**  - for each cluster identify some small number of typical "prototype" trajectories.
+ 2.  **Online Prediction** - Once the algorithm is trained we bring it onto the road. When we encounter a situation for which the trained algorithm is appropriate (returning to an intersection for example) we can use that algorithm to actually predict the trajectory of the vehicle.
+		1.  **Observe Partial Trajectory**  - As the target vehicle drives we can think of it leaving a "partial trajectory" behind it.
+		2.  **Compare to Prototype Trajectories**  - We can compare this partial trajectory to the  _corresponding parts_  of the prototype trajectories. When these partial trajectories are more similar (using the same notion of similarity defined earlier) their likelihoods should increase relative to the other trajectories.
+		3.  **Generate Predictions**  - For each cluster we identify the most likely prototype trajectory. We broadcast each of these trajectories along with the associated probability (see the image below).
 		![](https://d17h27t6h515a5.cloudfront.net/topher/2017/June/595407d1_prediction-1/prediction-1.jpg)
 
-**Model Based Approaches** can also be modelled to have an "offline" and online component.
-3.  **_Defining_**  process models (offline).
+**Model Based Approaches** can also be modelled to have an "offline" and online component. 
+ 1. **_Defining_**  process models (offline).
 		![alt text][image6]
-4.  **_Using_**  process models to compare driver behavior to what would be expected for each model.
+2. **_Using_**  process models to compare driver behavior to what would be expected for each model.
 		![alt text][image7]
-5.  **_Probabilistically classifying_**  driver intent by comparing the likelihoods of various behaviors with a multiple-model algorithm.
+3. **_Probabilistically classifying_**  driver intent by comparing the likelihoods of various behaviors with a multiple-model algorithm.
 		 ![alt text][image8]
-6.  **_Extrapolating_**  process models to generate trajectories.
+4. **_Extrapolating_**  process models to generate trajectories.
 		![alt text][image9]
 
 **Hybrid Approaches** can also be used to generate predictions. It is similar to the Model Based Approach but the multiple-model algorithm is replaced by machine learning here. For example, a Gaussian Naive Bayes classifier can be used to predict the behavior of vehicles on a highway.
