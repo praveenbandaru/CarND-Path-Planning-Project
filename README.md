@@ -87,7 +87,7 @@ There are broadly three categories of approaches to prediction:
 2. **_Using_**  process models to compare driver behavior to what would be expected for each model.
 	![alt text][image7]
 3. **_Probabilistically classifying_**  driver intent by comparing the likelihoods of various behaviors with a multiple-model algorithm.
-	![alt text][image8]
+![alt text][image8]
 4. **_Extrapolating_**  process models to generate trajectories.                                                        
 	<p align="center">
 	<img src="https://github.com/praveenbandaru/CarND-Path-Planning-Project/blob/master/screenshots/frenet-2.png">
