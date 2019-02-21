@@ -83,13 +83,16 @@ There are broadly three categories of approaches to prediction:
 
 **Model Based Approaches** can also be modelled to have an "offline" and online component. 
  1. **_Defining_**  process models (offline).
-		![alt text][image6]
+	![alt text][image6]
 2. **_Using_**  process models to compare driver behavior to what would be expected for each model.
-		![alt text][image7]
+	![alt text][image7]
 3. **_Probabilistically classifying_**  driver intent by comparing the likelihoods of various behaviors with a multiple-model algorithm.
-		 ![alt text][image8]
-4. **_Extrapolating_**  process models to generate trajectories.
-		![alt text][image9]
+	![alt text][image8]
+4. **_Extrapolating_**  process models to generate trajectories.                                                        
+	<p align="center">
+	<img src="https://github.com/praveenbandaru/CarND-Path-Planning-Project/blob/master/screenshots/frenet-2.png">
+	</p>
+
 
 **Hybrid Approaches** can also be used to generate predictions. It is similar to the Model Based Approach but the multiple-model algorithm is replaced by machine learning here. For example, a Gaussian Naive Bayes classifier can be used to predict the behavior of vehicles on a highway.
 	![alt text][image10]
