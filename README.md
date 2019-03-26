@@ -161,7 +161,7 @@ Our path planner works well and was able to make the car drive successfully arou
 
 A short video showing the output of path planning code is [here](https://www.youtube.com/watch?v=9a0qZ82hGlk).
 
-[![MPC Controller](https://img.youtube.com/vi/9a0qZ82hGlk/0.jpg)](https://www.youtube.com/watch?v=9a0qZ82hGlk)
+[![Path Planner](https://img.youtube.com/vi/9a0qZ82hGlk/0.jpg)](https://www.youtube.com/watch?v=9a0qZ82hGlk)
 
 ## Basic Build Instructions
 
